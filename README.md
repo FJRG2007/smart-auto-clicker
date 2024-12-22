@@ -2,6 +2,8 @@
 
 To use it, simply download the latest version.
 
+Check the releases [here](https://github.com/FJRG2007/smart-auto-clicker/tags).
+
 ### How to compile to an executable
 
 1. If you do not have the `pyinstaller` package installed, now is the time to install it.
