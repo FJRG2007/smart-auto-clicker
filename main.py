@@ -7,7 +7,7 @@ class AutoClicker:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Smart Auto Clicker - FJRG2007")
-        self.root.geometry("400x620")
+        self.root.geometry("400x650")
         self.root.resizable(False, False)
 
         self.config_path = self.get_config_path()
@@ -55,6 +55,27 @@ class AutoClicker:
         return config_dir
         
     def setup_gui(self):
+        # Report button.
+        report_frame = ttk.Frame(self.root)
+        report_frame.pack(fill="x", padx=10, pady=5)
+        def open_error_report():
+            import webbrowser
+            webbrowser.open("https://github.com/FJRG2007/smart-auto-clicker/issues/new")
+        try:
+            report_icon_path = os.path.join(self.config_path, "report.png")
+            if not os.path.exists(report_icon_path):
+                response = requests.get("https://raw.githubusercontent.com/FJRG2007/smart-auto-clicker/refs/heads/main/assets/report.png")
+                if response.status_code == 200:
+                    with open(report_icon_path, "wb") as icon_file:
+                        icon_file.write(response.content)
+            report_icon = tk.PhotoImage(file=report_icon_path)
+            report_button = ttk.Button(report_frame, image=report_icon, command=open_error_report)
+            report_button.image = report_icon
+        except Exception as e:
+            print(f"Error loading icon: {e}")
+            report_button = ttk.Button(report_frame, text="Report Error", command=open_error_report)
+        report_button.pack(anchor="w")
+
         # Trigger key settings.
         trigger_frame = ttk.LabelFrame(self.root, text="Trigger Key Settings", padding=10)
         trigger_frame.pack(fill="x", padx=10, pady=5)
