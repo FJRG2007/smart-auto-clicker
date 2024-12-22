@@ -1,7 +1,7 @@
 from threading import Thread
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
-import os, json, time, mouse, tkinter as tk, keyboard
+import os, json, time, mouse, tkinter as tk, requests, keyboard
 
 class AutoClicker:
     def __init__(self):
@@ -9,7 +9,19 @@ class AutoClicker:
         self.root.title("Smart Auto Clicker - FJRG2007")
         self.root.geometry("400x620")
         self.root.resizable(False, False)
-        self.root.iconbitmap("./assets/mouse.ico")
+
+        self.config_path = self.get_config_path()
+
+        # Icon.
+        self.icon_file = os.path.join(self.config_path, "mouse.ico")
+        if os.path.exists(self.icon_file): self.root.iconbitmap(self.icon_file)
+        else:
+            response = requests.get("https://raw.githubusercontent.com/FJRG2007/smart-auto-clicker/refs/heads/main/assets/mouse.ico")
+            if response.status_code == 200:
+                with open(self.icon_file, "wb") as file:
+                    file.write(response.content)
+                self.root.iconbitmap(self.icon_file)
+            else: print(f"Error downloading image. Status code: {response.status_code}")
         
         # Variables.
         self.is_running = False
@@ -29,7 +41,7 @@ class AutoClicker:
         self.seconds = 0
         self.milliseconds = 100
 
-        self.config_file = self.get_config_path()
+        self.config_file = os.path.join(self.config_path, "autoclicker_config.json")
         
         self.setup_gui()
         self.load_config()
@@ -40,7 +52,7 @@ class AutoClicker:
         else: base_dir = os.path.expanduser("~/.config")
         config_dir = os.path.join(base_dir, "FJRG2007_projects_data", "SmartAutoClicker")
         os.makedirs(config_dir, exist_ok=True)
-        return os.path.join(config_dir, "autoclicker_config.json")
+        return config_dir
         
     def setup_gui(self):
         # Trigger key settings.
