@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+title: Smart Auto Clicker
+message: "Smart Auto Clicker - Automate your clicks easily."
+type: software
+authors:
+  - given-names: FJRG2007
+    email: fjrg2007@tpeoficial.com
+repository-code: 'https://github.com/FJRG2007/smart-auto-clicker'
+url: 'https://status.tpeoficial.com/development'
+abstract: >-
+  Smart Auto Clicker allows you to quickly and easily automate your tasks using the mouse on your PC.
+keywords:
+  - auto click
+  - automation
+  - os tools
+license: AGPL-3.0-or-later
+version: Coming Soon
