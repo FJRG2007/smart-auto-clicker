@@ -1,4 +1,5 @@
 from threading import Thread
+from PIL import Image, ImageTk
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
 import os, json, time, mouse, tkinter as tk, requests, keyboard
@@ -68,9 +69,14 @@ class AutoClicker:
                 if response.status_code == 200:
                     with open(report_icon_path, "wb") as icon_file:
                         icon_file.write(response.content)
-            report_icon = tk.PhotoImage(file=report_icon_path)
-            report_button = ttk.Button(report_frame, image=report_icon, command=open_error_report)
+            max_width, max_height = 12, 12
+            image = Image.open(report_icon_path)
+            image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+            report_icon = ImageTk.PhotoImage(image)
+            button_frame = ttk.Frame(report_frame)
+            report_button = ttk.Button(report_frame, text="Report Error", image=report_icon, compound="left", command=open_error_report)
             report_button.image = report_icon
+            report_button.pack(anchor="w")
         except Exception as e:
             print(f"Error loading icon: {e}")
             report_button = ttk.Button(report_frame, text="Report Error", command=open_error_report)
