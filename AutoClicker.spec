@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['main.py'],
+    ['init.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('assets', 'assets')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

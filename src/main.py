@@ -1,29 +1,30 @@
 from threading import Thread
 from PIL import Image, ImageTk
+from .memory import MemoryManager
+from .windows import WindowsManager
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
-import os, json, time, mouse, tkinter as tk, requests, keyboard
+from .utils.basics import get_resource_path
+import os, json, time, mouse, tkinter as tk, keyboard
 
 class AutoClicker:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.withdraw()
+        if MemoryManager.get("use_current_pos", True): 
+            self.root.withdraw()
+            self.root.geometry(f"+{MemoryManager.get("window_x", 100)}+{MemoryManager.get("window_y", 100)}")
+            self.root.deiconify()
         self.root.title("Smart Auto Clicker - FJRG2007")
-        self.root.geometry("400x670")
+        self.root.geometry("400x725")
         self.root.resizable(False, False)
+        self.config_path = self.get_config_path()  
 
-        self.config_path = self.get_config_path()
+        self.config_file = os.path.join(self.config_path, "autoclicker_config.json")
+
+        self.windows_manager = WindowsManager(self.root, self.config_file)
 
         # Icon.
-        self.icon_file = os.path.join(self.config_path, "mouse.ico")
-        if os.path.exists(self.icon_file): self.root.iconbitmap(self.icon_file)
-        else:
-            response = requests.get("https://raw.githubusercontent.com/FJRG2007/smart-auto-clicker/refs/heads/main/assets/mouse.ico")
-            if response.status_code == 200:
-                with open(self.icon_file, "wb") as file:
-                    file.write(response.content)
-                self.root.iconbitmap(self.icon_file)
-            else: print(f"Error downloading image. Status code: {response.status_code}")
+        self.root.iconbitmap(get_resource_path("assets/mouse.ico"))
         
         # Variables.
         self.is_running = False
@@ -42,8 +43,6 @@ class AutoClicker:
         self.minutes = 0
         self.seconds = 0
         self.milliseconds = 100
-
-        self.config_file = os.path.join(self.config_path, "autoclicker_config.json")
         
         self.setup_gui()
         self.load_config()
@@ -58,30 +57,28 @@ class AutoClicker:
         
     def setup_gui(self):
         # Report button.
-        report_frame = ttk.Frame(self.root)
-        report_frame.pack(fill="x", padx=10, pady=5)
+        menu_frame = ttk.Frame(self.root)
+        menu_frame.pack(fill="x", padx=10, pady=5)
         def open_error_report():
             import webbrowser
             webbrowser.open("https://github.com/FJRG2007/smart-auto-clicker/issues/new")
         try:
-            report_icon_path = os.path.join(self.config_path, "report.png")
-            if not os.path.exists(report_icon_path):
-                response = requests.get("https://raw.githubusercontent.com/FJRG2007/smart-auto-clicker/refs/heads/main/assets/report.png")
-                if response.status_code == 200:
-                    with open(report_icon_path, "wb") as icon_file:
-                        icon_file.write(response.content)
+            report_icon_path = get_resource_path("assets/report.png")
             max_width, max_height = 12, 12
             image = Image.open(report_icon_path)
             image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
             report_icon = ImageTk.PhotoImage(image)
-            button_frame = ttk.Frame(report_frame)
-            report_button = ttk.Button(report_frame, text="Report Error", image=report_icon, compound="left", command=open_error_report)
+            report_button = ttk.Button(menu_frame, text="Report Error", image=report_icon, compound="left", command=open_error_report)
             report_button.image = report_icon
-            report_button.pack(anchor="w")
         except Exception as e:
             print(f"Error loading icon: {e}")
-            report_button = ttk.Button(report_frame, text="Report Error", command=open_error_report)
-        report_button.pack(anchor="w")
+            report_button = ttk.Button(menu_frame, text="Report Error", command=open_error_report)
+
+        # Settings button.
+        settings_button = ttk.Button(menu_frame, text="Open Settings", command=self.windows_manager.open_config_window)
+
+        report_button.pack(side=tk.LEFT, padx=10, pady=5)
+        settings_button.pack(side=tk.LEFT, padx=10, pady=5)
 
         # Trigger key settings.
         trigger_frame = ttk.LabelFrame(self.root, text="Trigger Key Settings", padding=10)
@@ -318,6 +315,9 @@ class AutoClicker:
         try:
             with open(self.config_file, "w") as f:
                 json.dump(config, f)
+            MemoryManager.set("window_x", config["window_x"])
+            MemoryManager.set("window_y", config["window_y"])
+            MemoryManager.save_memory()
         except Exception as e: messagebox.showerror("Error", f"Error saving configuration:\n{e}")
             
     def load_config(self):
@@ -375,16 +375,7 @@ class AutoClicker:
                 
             self.toggle_position()
             self.toggle_mode()
-
-            window_x = config.get("window_x", 100)
-            window_y = config.get("window_y", 100)
-            self.root.geometry(f"+{window_x}+{window_y}")
-            self.root.deiconify()
         except: pass
-                
-    def run(self):
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.root.main
                 
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -396,6 +387,6 @@ class AutoClicker:
         self.save_config()
         self.root.destroy()
 
-if __name__ == "__main__":
+def main():
     app = AutoClicker()
     app.run()

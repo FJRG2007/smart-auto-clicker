@@ -34,5 +34,5 @@ pip install requirements.txt
 
 4. Now it's time to compile the project.
 ```bash
-pyinstaller --clean --onefile --noconsole --icon=assets/mouse.ico --name="AutoClicker" main.py
+pyinstaller --clean --onefile --noconsole --icon=assets/mouse.ico --add-data "assets;assets" --name="AutoClicker" init.py
 ```
