@@ -7,8 +7,9 @@ import os, json, time, mouse, tkinter as tk, requests, keyboard
 class AutoClicker:
     def __init__(self):
         self.root = tk.Tk()
+        self.root.withdraw()
         self.root.title("Smart Auto Clicker - FJRG2007")
-        self.root.geometry("400x650")
+        self.root.geometry("400x670")
         self.root.resizable(False, False)
 
         self.config_path = self.get_config_path()
@@ -310,7 +311,9 @@ class AutoClicker:
             "click_pos": self.click_pos,
             "trigger_key": self.trigger_key,
             "hold_mode": self.hold_mode,
-            "hold_duration": self.hold_entry.get()
+            "hold_duration": self.hold_entry.get(),
+            "window_x": self.root.winfo_x(),
+            "window_y": self.root.winfo_y()
         }
         try:
             with open(self.config_file, "w") as f:
@@ -328,7 +331,9 @@ class AutoClicker:
             "click_pos": [0, 0],
             "trigger_key": "F6",
             "hold_mode": False,
-            "hold_duration": "0.1"
+            "hold_duration": "0.1",
+            "window_x": 100,
+            "window_y": 100
         }
         if os.path.exists(self.config_file):
             try:
@@ -370,6 +375,11 @@ class AutoClicker:
                 
             self.toggle_position()
             self.toggle_mode()
+
+            window_x = config.get("window_x", 100)
+            window_y = config.get("window_y", 100)
+            self.root.geometry(f"+{window_x}+{window_y}")
+            self.root.deiconify()
         except: pass
                 
     def run(self):
