@@ -29,7 +29,7 @@ git clone https://github.com/FJRG2007/smart-auto-clicker.git
 
 3. Now enter the repository folder
 ```bash
-cd smart-auto-clicker.git
+cd smart-auto-clicker
 ```
 
 4. It is time to install the project dependencies.
