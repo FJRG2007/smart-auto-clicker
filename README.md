@@ -27,7 +27,7 @@ Check the releases [here](https://github.com/FJRG2007/smart-auto-clicker/tags).
 git clone https://github.com/FJRG2007/smart-auto-clicker.git
 ```
 
-3. Now enter the repository folder
+3. Now enter the repository folder.
 ```bash
 cd smart-auto-clicker
 ```
