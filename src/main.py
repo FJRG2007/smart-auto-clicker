@@ -19,9 +19,7 @@ class AutoClicker:
         self.root.geometry("400x725")
         self.root.resizable(False, False)
         self.config_path = self.get_config_path()  
-
         self.config_file = os.path.join(self.config_path, "autoclicker_config.json")
-
         self.windows_manager = WindowsManager(self.root, self.config_file)
 
         # Icon.
@@ -83,7 +81,6 @@ class AutoClicker:
         # Settings button.
         settings_button = ttk.Button(menu_frame, text="Open Settings", command=self.windows_manager.open_config_window)
 
-
         report_button.grid(row=0, column=0, padx=5)
         settings_button.grid(row=0, column=1, padx=5)
         simulate_button.grid(row=0, column=2, padx=5)
@@ -91,7 +88,6 @@ class AutoClicker:
         menu_frame.grid_columnconfigure(0, weight=1)
         menu_frame.grid_columnconfigure(1, weight=1)
         menu_frame.grid_columnconfigure(2, weight=1)
-
 
         # Trigger key settings.
         trigger_frame = ttk.LabelFrame(self.root, text="Trigger Key Settings", padding=10)
