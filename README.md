@@ -14,6 +14,16 @@
     <img src="https://github.com/user-attachments/assets/df347e81-6030-470a-8c88-2532471357e9" />
 </div>
 
+### Features
+
+- ⌨️ Use any mouse or keyboard key as a “Click Key”.
+- 🎛️ Customize the click mode between click and hold.
+- 🎯 Set the click position following the cursor or a specific location.
+- ⏱️ Easily customize the time interval between clicks.
+- 📍 Location memory system so that the window opens right where you left it.
+- ⏯️ Customize the trigger key to your liking.
+- 💾 All configurations as you left them.
+
 ### How to download and use
 
 Check the releases [here](https://github.com/FJRG2007/smart-auto-clicker/tags).
