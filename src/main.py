@@ -64,9 +64,7 @@ class AutoClicker:
             webbrowser.open("https://github.com/FJRG2007/smart-auto-clicker/issues/new")
         try:
             report_icon_path = get_resource_path("assets/report.png")
-            max_width, max_height = 12, 12
             image = Image.open(report_icon_path)
-            image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
             report_icon = ImageTk.PhotoImage(image)
             report_button = ttk.Button(menu_frame, text="Report Error", image=report_icon, compound="left", command=open_error_report)
             report_button.image = report_icon
@@ -307,13 +305,15 @@ class AutoClicker:
             time.sleep(interval)
             
     def save_config(self):
-        config = {
+        with open(self.config_file, "r") as f:
+            current_config = json.load(f)
+        new_config = {
             "hours": self.hours_entry.get(),
             "minutes": self.minutes_entry.get(),
             "seconds": self.seconds_entry.get(),
             "milliseconds": self.ms_entry.get(),
             "click_key": self.click_key,
-            "use_current_pos": self.use_current_pos,
+            "use_current_pos": current_config["use_current_pos"],
             "click_pos": self.click_pos,
             "trigger_key": self.trigger_key,
             "hold_mode": self.hold_mode,
@@ -323,9 +323,9 @@ class AutoClicker:
         }
         try:
             with open(self.config_file, "w") as f:
-                json.dump(config, f)
-            MemoryManager.set("window_x", config["window_x"])
-            MemoryManager.set("window_y", config["window_y"])
+                json.dump(new_config, f)
+            MemoryManager.set("window_x", new_config["window_x"])
+            MemoryManager.set("window_y", new_config["window_y"])
             MemoryManager.save_memory()
         except Exception as e: messagebox.showerror("Error", f"Error saving configuration:\n{e}")
             

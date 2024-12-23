@@ -1,12 +1,15 @@
-import json
-import tkinter as tk
 from tkinter import ttk, messagebox
 from src.memory import MemoryManager
+from src.utils.basics import get_resource_path
+import json, time, tkinter as tk, requests, webbrowser
 
 class ConfigWindow:
+    CACHE_TIMEOUT = 60
+
     def __init__(self, parent, config_file):
         self.parent = parent
         self.config_file = config_file
+        self.cache = {"data": None, "timestamp": 0}
         self.window = tk.Toplevel(self.parent)
         self.window.title("Settings")
         self.window.geometry("300x250")
@@ -43,6 +46,11 @@ class ConfigWindow:
             font=("Arial", 8), anchor="w", justify="left")
         note_label.pack(anchor="w")
 
+        self.update_label = ttk.Label(self.window, text="Loading...", foreground="blue")
+        self.update_label.pack(pady=5)
+
+        self.check_for_updates()
+
         # Button to save and close.
         save_button = ttk.Button(self.window, text="Save and Exit", command=self.save_and_exit)
         save_button.pack(side="left", padx=10, pady=10)
@@ -54,22 +62,53 @@ class ConfigWindow:
         # Bind window close (X) event to check for unsaved changes.
         self.window.protocol("WM_DELETE_WINDOW", self.on_close)
 
+    def check_for_updates(self):
+        if time.time() - self.cache["timestamp"] < self.CACHE_TIMEOUT: self.process_update_data(self.cache["data"])
+        else:
+            self.update_label.config(text="Loading...", foreground="blue")
+            self.window.update_idletasks()
+            self.window.after(100, self.fetch_update_data)
+
+    def fetch_update_data(self):
+        try:
+            response = requests.get("https://github.com/FJRG2007/smart-auto-clicker/raw/refs/heads/main/assets/remote.json")
+            if response.status_code == 200:
+                remote_data = response.json()
+                self.cache = {"data": remote_data, "timestamp": time.time()}
+                self.process_update_data(remote_data)
+            else: self.update_label.config(text="Failed to check for updates.", foreground="red")
+        except Exception as e:
+            self.update_label.config(text="Error checking for updates.", foreground="red")
+            print(f"Error checking for updates: {e}")
+
+    def process_update_data(self, remote_data):
+        with open(get_resource_path("assets/remote.json"), "r") as f: 
+            current_version = json.load(f).get("version", "error")
+        remote_version = remote_data.get("version", "")
+        download_url = remote_data.get("download_url", "https://github.com/FJRG2007/smart-auto-clicker/releases")
+        if remote_version and remote_version != current_version:
+            self.update_label.config(text=f"New version available: {remote_version}", foreground="red")
+            update_button = ttk.Button(self.window, text="Update", command=lambda: webbrowser.open(download_url))
+            update_button.pack(pady=5, ipadx=10, fill="x", anchor="center", expand=True)
+        else: self.update_label.config(text="You are using the latest version.", foreground="green")
+
     def on_config_change(self):
         self.config_changed = True
 
     def save_config(self):
         # Gather the configuration data.
-        config = {
-            "use_current_pos": self.auto_position_var.get(),
-            "window_x": self.parent.winfo_x(),
-            "window_y": self.parent.winfo_y()
+        new_config = {
+            "use_current_pos": self.auto_position_var.get()
         }
         try:
+            with open(self.config_file, "r") as f:
+                current_config = json.load(f)
+            current_config["use_current_pos"] = new_config["use_current_pos"]
             with open(self.config_file, "w") as f:
-                json.dump(config, f, indent=4)
-            MemoryManager.set("use_current_pos", config["use_current_pos"])
+                json.dump(current_config, f)
+            MemoryManager.set("use_current_pos", new_config["use_current_pos"])
             MemoryManager.save_memory()
-            self.original_config = config.copy() # Update the original config after saving.
+            self.original_config = new_config.copy()
             self.config_changed = False
         except Exception as e: messagebox.showerror("Error", f"Error saving configuration:\n{e}")
 

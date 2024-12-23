@@ -1,5 +1,4 @@
 import time, keyboard
-from tkinter import ttk
 from threading import Timer
 
 class GameSimulator:
