@@ -11,7 +11,7 @@
 <div align="center">
     <span>To use it, simply download the latest version.</span>
     <br />
-    <img src="https://github.com/user-attachments/assets/df347e81-6030-470a-8c88-2532471357e9" />
+    <img src="https://github.com/user-attachments/assets/afca85ec-c1fd-472b-919b-3b6233dc0e61" />
 </div>
 
 ### Features
@@ -23,6 +23,7 @@
 - 📍 Location memory system so that the window opens right where you left it.
 - ⏯️ Customize the trigger key to your liking.
 - 💾 All configurations as you left them.
+- 🎮 Player simulation system to avoid being expelled by AFK.
 
 ### How to download and use
 
