@@ -11,7 +11,7 @@
 <div align="center">
     <span>To use it, simply download the latest version.</span>
     <br />
-    <img src="https://github.com/user-attachments/assets/d257c349-61e0-47f5-9ec1-dd793d976e7e" />
+    <img src="https://github.com/user-attachments/assets/df347e81-6030-470a-8c88-2532471357e9" />
 </div>
 
 ### How to download and use
@@ -27,12 +27,17 @@ Check the releases [here](https://github.com/FJRG2007/smart-auto-clicker/tags).
 git clone https://github.com/FJRG2007/smart-auto-clicker.git
 ```
 
-3. It is time to install the project dependencies.
+3. Now enter the repository folder
+```bash
+cd smart-auto-clicker.git
+```
+
+4. It is time to install the project dependencies.
 ```bash
 pip install requirements.txt
 ```
 
-4. Now it's time to compile the project.
+5. Now it's time to compile the project.
 ```bash
 pyinstaller --clean --onefile --noconsole --icon=assets/mouse.ico --add-data "assets;assets" --name="AutoClicker" init.py
 ```
