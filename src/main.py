@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
 from .utils.basics import get_resource_path
 import os, json, time, mouse, tkinter as tk, keyboard
+from src.clickers.simulating_game import GameSimulator
 
 class AutoClicker:
     def __init__(self):
@@ -59,6 +60,7 @@ class AutoClicker:
         # Report button.
         menu_frame = ttk.Frame(self.root)
         menu_frame.pack(fill="x", padx=10, pady=5)
+
         def open_error_report():
             import webbrowser
             webbrowser.open("https://github.com/FJRG2007/smart-auto-clicker/issues/new")
@@ -74,11 +76,22 @@ class AutoClicker:
             print(f"Error loading icon: {e}")
             report_button = ttk.Button(menu_frame, text="Report Error", command=open_error_report)
 
+        # Simulate game button.
+        simulate_button = ttk.Button(menu_frame, text="Simulate Playing")
+        self.game_simulator = GameSimulator(self.root, simulate_button)
+
         # Settings button.
         settings_button = ttk.Button(menu_frame, text="Open Settings", command=self.windows_manager.open_config_window)
 
-        report_button.pack(side=tk.LEFT, padx=10, pady=5)
-        settings_button.pack(side=tk.LEFT, padx=10, pady=5)
+
+        report_button.grid(row=0, column=0, padx=5)
+        settings_button.grid(row=0, column=1, padx=5)
+        simulate_button.grid(row=0, column=2, padx=5)
+
+        menu_frame.grid_columnconfigure(0, weight=1)
+        menu_frame.grid_columnconfigure(1, weight=1)
+        menu_frame.grid_columnconfigure(2, weight=1)
+
 
         # Trigger key settings.
         trigger_frame = ttk.LabelFrame(self.root, text="Trigger Key Settings", padding=10)
