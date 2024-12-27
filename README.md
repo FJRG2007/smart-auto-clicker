@@ -11,7 +11,7 @@
 <div align="center">
     <span>To use it, simply download the latest version.</span>
     <br />
-    <img src="https://github.com/user-attachments/assets/afca85ec-c1fd-472b-919b-3b6233dc0e61" />
+    <img src="https://github.com/user-attachments/assets/148a3919-47ee-422e-9440-b914e5568c95" />
 </div>
 
 ### Features
@@ -45,10 +45,14 @@ cd smart-auto-clicker
 
 4. It is time to install the project dependencies.
 ```bash
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 5. Now it's time to compile the project.
 ```bash
 pyinstaller --clean --onefile --noconsole --icon=assets/mouse.ico --add-data "assets;assets" --name="AutoClicker" init.py
 ```
+
+### How to test it?
+
+To test the performance of the project, we use keyboard <a href="https://www.onlinemictest.com/keyboard-test/" target="_blank">simulation websites</a> or games.

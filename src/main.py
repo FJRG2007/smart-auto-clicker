@@ -142,11 +142,17 @@ class AutoClicker:
         ttk.Radiobutton(click_mode_frame, text="Single Click", variable=self.mode_var, value=False, command=self.toggle_mode).pack()
         ttk.Radiobutton(click_mode_frame, text="Hold Button", variable=self.mode_var, value=True, command=self.toggle_mode).pack()
         
+        # Hold duration section.
         self.hold_frame = ttk.Frame(click_mode_frame)
         ttk.Label(self.hold_frame, text="Hold Duration (seconds):").pack(side=tk.LEFT, padx=5)
+        # Entry field for hold duration.
         self.hold_entry = ttk.Entry(self.hold_frame, width=8)
         self.hold_entry.insert(0, "0.1")
         self.hold_entry.pack(side=tk.LEFT, padx=5)
+
+        # Add explanatory note.
+        self.hold_note = ttk.Label(self.hold_frame, text="Set to 0 for infinite hold.", font=("Arial", 8), foreground="gray")
+        self.hold_note.pack(side=tk.LEFT, padx=5)
         
         # Button settings.
         button_frame = ttk.LabelFrame(self.root, text="Button Settings", padding=10)
@@ -282,9 +288,16 @@ class AutoClicker:
         self.start_stop_button.config(text="Stop" if self.is_running else "Start")
             
     def clicking_loop(self):
+        if self.hold_mode and float(self.hold_entry.get()) == 0:
+            if self.click_key in ["left", "right", "middle"]: mouse.press(self.click_key)
+            else: keyboard.press(self.click_key)
+            while self.is_running:
+                time.sleep(0.1)
+            if self.click_key in ["left", "right", "middle"]: mouse.release(self.click_key)
+            else: keyboard.release(self.click_key)
+            return
         while self.is_running:
             if not self.use_current_pos: mouse.move(self.click_pos[0], self.click_pos[1])
-            
             if self.click_key in ["left", "right", "middle"]:
                 if self.hold_mode:
                     mouse.press(self.click_key)
