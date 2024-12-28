@@ -11,10 +11,18 @@ from src.clickers.simulating_game import GameSimulator
 class AutoClicker:
     def __init__(self):
         self.root = tk.Tk()
-        if MemoryManager.get("use_current_pos", True): 
+        self.startup_mode = MemoryManager.get("startup_mode", "normal")
+        if self.startup_mode == "minimized":
+            self.root.withdraw()
+            self.root.after(0, lambda: self.root.iconify())
+        elif self.startup_mode == "tray":
+            self.root.withdraw()
+            self.setup_system_tray()
+        elif MemoryManager.get("use_current_pos", True): 
             self.root.withdraw()
             self.root.geometry(f"+{MemoryManager.get("window_x", 100)}+{MemoryManager.get("window_y", 100)}")
             self.root.deiconify()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.title("Smart Auto Clicker - FJRG2007")
         self.root.geometry("400x725")
         self.root.resizable(False, False)
@@ -327,6 +335,7 @@ class AutoClicker:
             "milliseconds": self.ms_entry.get(),
             "click_key": self.click_key,
             "use_current_pos": current_config["use_current_pos"],
+            "startup_mode": current_config["startup_mode"],
             "click_pos": self.click_pos,
             "trigger_key": self.trigger_key,
             "hold_mode": self.hold_mode,
@@ -342,7 +351,7 @@ class AutoClicker:
             MemoryManager.save_memory()
         except Exception as e: messagebox.showerror("Error", f"Error saving configuration:\n{e}")
             
-    def load_config(self):
+    def load_config(self, force_create_file=True):
         default_config = {
             "hours": "0",
             "minutes": "0",
@@ -350,6 +359,7 @@ class AutoClicker:
             "milliseconds": "100",
             "click_key": "left",
             "use_current_pos": True,
+            "startup_mode": "normal",
             "click_pos": [0, 0],
             "trigger_key": "F6",
             "hold_mode": False,
@@ -364,7 +374,13 @@ class AutoClicker:
             except Exception as e:
                 messagebox.showwarning("Warning", f"Error loading configuration. Using defaults.\n{e}")
                 config = default_config
-        else: config = default_config
+        else: 
+            config = default_config
+            if force_create_file:
+                try:
+                    with open(self.config_file, "w") as f:
+                        json.dump(config, f)
+                except Exception as e: messagebox.showerror("Error", f"Error creating configuration file:\n{e}")
         try:
             # Load time values.
             self.hours_entry.delete(0, tk.END)
@@ -398,6 +414,23 @@ class AutoClicker:
             self.toggle_position()
             self.toggle_mode()
         except: pass
+
+    def setup_system_tray(self):
+        from PIL import Image
+        from pystray import Icon, MenuItem, Menu
+        image = image = Image.open(get_resource_path("assets/mouse.ico"))
+        def show_window(icon, item):
+            self.root.deiconify()
+            icon.stop()
+        def exit_application(icon, item):
+            self.root.destroy()
+            icon.stop()
+        menu = Menu(
+            MenuItem("Open", show_window),
+            MenuItem("Exit", exit_application)
+        )
+        self.tray_icon = Icon("Smart Auto Clicker", image, "Smart Auto Clicker", menu)
+        self.tray_icon.run_detached()
                 
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)

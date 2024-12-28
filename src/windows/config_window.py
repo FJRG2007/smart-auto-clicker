@@ -12,7 +12,7 @@ class ConfigWindow:
         self.cache = {"data": None, "timestamp": 0}
         self.window = tk.Toplevel(self.parent)
         self.window.title("Settings")
-        self.window.geometry("300x250")
+        self.window.geometry("300x300")
         self.window.resizable(False, False)
 
         # Load existing configuration from the config file.
@@ -45,6 +45,45 @@ class ConfigWindow:
             text="Note: Enabling this may affect startup speed.", 
             font=("Arial", 8), anchor="w", justify="left")
         note_label.pack(anchor="w")
+
+        # Variable to track the startup mode state.
+        self.startup_mode_var = tk.StringVar(value=self.config.get("startup_mode", "normal"))
+
+        # Frame to group the startup mode options.
+        startup_mode_frame = ttk.Frame(self.window)
+        startup_mode_frame.pack(pady=10, fill="x", padx=10)
+
+        # Label for startup mode.
+        startup_mode_label = ttk.Label(startup_mode_frame, text="Startup Mode:")
+        startup_mode_label.pack(anchor="w")
+
+        # Radio buttons for startup mode options.
+        normal_radio = ttk.Radiobutton(
+            startup_mode_frame, 
+            text="Normal", 
+            variable=self.startup_mode_var, 
+            value="normal",
+            command=self.on_config_change
+        )
+        normal_radio.pack(anchor="w")
+
+        minimized_radio = ttk.Radiobutton(
+            startup_mode_frame, 
+            text="Minimized", 
+            variable=self.startup_mode_var, 
+            value="minimized",
+            command=self.on_config_change
+        )
+        minimized_radio.pack(anchor="w")
+
+        tray_radio = ttk.Radiobutton(
+            startup_mode_frame, 
+            text="Tray", 
+            variable=self.startup_mode_var, 
+            value="tray",
+            command=self.on_config_change
+        )
+        tray_radio.pack(anchor="w")
 
         self.update_label = ttk.Label(self.window, text="Loading...", foreground="blue")
         self.update_label.pack(pady=5)
@@ -82,7 +121,7 @@ class ConfigWindow:
             print(f"Error checking for updates: {e}")
 
     def process_update_data(self, remote_data):
-        with open(get_resource_path("assets/remote.json"), "r") as f: 
+        with open(get_resource_path("assets/remote.json"), "r") as f:
             current_version = json.load(f).get("version", "error")
         remote_version = remote_data.get("version", "")
         download_url = remote_data.get("download_url", "https://github.com/FJRG2007/smart-auto-clicker/releases")
@@ -98,15 +137,18 @@ class ConfigWindow:
     def save_config(self):
         # Gather the configuration data.
         new_config = {
-            "use_current_pos": self.auto_position_var.get()
+            "use_current_pos": self.auto_position_var.get(),
+            "startup_mode": self.startup_mode_var.get()
         }
         try:
             with open(self.config_file, "r") as f:
                 current_config = json.load(f)
             current_config["use_current_pos"] = new_config["use_current_pos"]
+            current_config["startup_mode"] = new_config["startup_mode"]
             with open(self.config_file, "w") as f:
                 json.dump(current_config, f)
             MemoryManager.set("use_current_pos", new_config["use_current_pos"])
+            MemoryManager.set("startup_mode", new_config["startup_mode"])
             MemoryManager.save_memory()
             self.original_config = new_config.copy()
             self.config_changed = False
@@ -120,10 +162,20 @@ class ConfigWindow:
         except (FileNotFoundError, json.JSONDecodeError):
             # If the file doesn't exist or is corrupt, return default values.
             return {
-                "use_current_pos": True,
-                "window_x": 100,
-                "window_y": 100
-            }
+            "hours": "0",
+            "minutes": "0",
+            "seconds": "0",
+            "milliseconds": "100",
+            "click_key": "left",
+            "use_current_pos": True,
+            "startup_mode": "normal",
+            "click_pos": [0, 0],
+            "trigger_key": "F6",
+            "hold_mode": False,
+            "hold_duration": "0.1",
+            "window_x": 100,
+            "window_y": 100
+        }
 
     def save_and_exit(self):
         # Save the settings and then close the window.
@@ -143,3 +195,7 @@ class ConfigWindow:
     # Method to get the auto-positioning setting.
     def get_auto_position(self):
         return self.auto_position_var.get()
+
+    # Method to get the startup mode setting.
+    def get_startup_mode(self):
+        return self.startup_mode_var.get()
