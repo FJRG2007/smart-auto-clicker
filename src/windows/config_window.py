@@ -1,14 +1,12 @@
 from tkinter import ttk, messagebox
 from src.memory import MemoryManager
-from src.utils.basics import get_resource_path
 import json, time, tkinter as tk, requests, webbrowser, src.lib.globals as globals
 
 class ConfigWindow:
     CACHE_TIMEOUT = 60
 
-    def __init__(self, parent, config_file):
+    def __init__(self, parent):
         self.parent = parent
-        self.config_file = config_file
         self.cache = {"data": None, "timestamp": 0}
         self.window = tk.Toplevel(self.parent)
         self.window.title("Settings")
@@ -22,10 +20,6 @@ class ConfigWindow:
         self.config = self.load_config()
         self.original_config = self.config.copy()
         self.config_changed = False
-
-        # Label for settings.
-        label = ttk.Label(self.window, text="Settings go here")
-        label.pack(pady=20)
 
         # Frame to group the Auto-position option and its note.
         auto_position_frame = ttk.Frame(self.window)
@@ -103,7 +97,7 @@ class ConfigWindow:
 
         # Bind window close (X) event to check for unsaved changes.
         self.window.protocol("WM_DELETE_WINDOW", self.on_close)
-
+    
     def check_for_updates(self):
         if time.time() - self.cache["timestamp"] < self.CACHE_TIMEOUT: self.process_update_data(self.cache["data"])
         else:
@@ -124,7 +118,7 @@ class ConfigWindow:
             print(f"Error checking for updates: {e}")
 
     def process_update_data(self, remote_data):
-        with open(get_resource_path("assets/remote.json"), "r") as f:
+        with open(globals.app_remote_data_path, "r") as f:
             current_version = json.load(f).get("version", "error")
         remote_version = remote_data.get("version", "")
         download_url = remote_data.get("download_url", "https://github.com/FJRG2007/smart-auto-clicker/releases")
@@ -144,11 +138,11 @@ class ConfigWindow:
             "startup_mode": self.startup_mode_var.get()
         }
         try:
-            with open(self.config_file, "r") as f:
+            with open(globals.app_config_file_path, "r") as f:
                 current_config = json.load(f)
             current_config["use_current_pos"] = new_config["use_current_pos"]
             current_config["startup_mode"] = new_config["startup_mode"]
-            with open(self.config_file, "w") as f:
+            with open(globals.app_config_file_path, "w") as f:
                 json.dump(current_config, f)
             MemoryManager.set("use_current_pos", new_config["use_current_pos"])
             MemoryManager.set("startup_mode", new_config["startup_mode"])
@@ -160,7 +154,7 @@ class ConfigWindow:
     def load_config(self):
         # Try to load the configuration from a file.
         try:
-            with open(self.config_file, "r") as f:
+            with open(globals.app_config_file_path, "r") as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             # If the file doesn't exist or is corrupt, return default values.

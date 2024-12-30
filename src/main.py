@@ -4,7 +4,6 @@ from .memory import MemoryManager
 from .windows import WindowsManager
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
-from .utils.basics import get_resource_path
 from src.clickers.simulating_game import GameSimulator
 import os, json, time, mouse, tkinter as tk, keyboard, src.lib.globals as globals
 
@@ -26,9 +25,8 @@ class AutoClicker:
         self.root.title("Smart Auto Clicker - FJRG2007")
         self.root.geometry("400x725")
         self.root.resizable(False, False)
-        self.config_path = self.get_config_path()  
-        self.config_file = os.path.join(self.config_path, "autoclicker_config.json")
-        self.windows_manager = WindowsManager(self.root, self.config_file)
+        globals.app_config_file_path = os.path.join(globals.app_config_path, "autoclicker_config.json")
+        self.windows_manager = WindowsManager(self.root)
 
         # Icon.
         self.root.iconbitmap(globals.app_icon_path)
@@ -55,13 +53,6 @@ class AutoClicker:
         self.load_config()
         self.setup_keyboard_listener()
 
-    def get_config_path(self):
-        if os.name == "nt": base_dir = os.getenv("APPDATA", os.path.expanduser("~"))
-        else: base_dir = os.path.expanduser("~/.config")
-        config_dir = os.path.join(base_dir, "FJRG2007_projects_data", "SmartAutoClicker")
-        os.makedirs(config_dir, exist_ok=True)
-        return config_dir
-
     def setup_gui(self):
         # Report button.
         menu_frame = ttk.Frame(self.root)
@@ -71,8 +62,7 @@ class AutoClicker:
             import webbrowser
             webbrowser.open("https://github.com/FJRG2007/smart-auto-clicker/issues/new")
         try:
-            report_icon_path = get_resource_path("assets/report.png")
-            image = Image.open(report_icon_path)
+            image = Image.open(globals.app_report_icon_path)
             report_icon = ImageTk.PhotoImage(image)
             report_button = ttk.Button(menu_frame, text="Report Error", image=report_icon, compound="left", command=open_error_report)
             report_button.image = report_icon
@@ -326,7 +316,7 @@ class AutoClicker:
             time.sleep(interval)
             
     def save_config(self):
-        with open(self.config_file, "r") as f:
+        with open(globals.app_config_file_path, "r") as f:
             current_config = json.load(f)
         new_config = {
             "hours": self.hours_entry.get(),
@@ -344,7 +334,7 @@ class AutoClicker:
             "window_y": self.root.winfo_y()
         }
         try:
-            with open(self.config_file, "w") as f:
+            with open(globals.app_config_file_path, "w") as f:
                 json.dump(new_config, f)
             MemoryManager.set("window_x", new_config["window_x"])
             MemoryManager.set("window_y", new_config["window_y"])
@@ -367,9 +357,9 @@ class AutoClicker:
             "window_x": 100,
             "window_y": 100
         }
-        if os.path.exists(self.config_file):
+        if os.path.exists(globals.app_config_file_path):
             try:
-                with open(self.config_file, "r") as f:
+                with open(globals.app_config_file_path, "r") as f:
                     config = json.load(f)
             except Exception as e:
                 messagebox.showwarning("Warning", f"Error loading configuration. Using defaults.\n{e}")
@@ -378,7 +368,7 @@ class AutoClicker:
             config = default_config
             if force_create_file:
                 try:
-                    with open(self.config_file, "w") as f:
+                    with open(globals.app_config_file_path, "w") as f:
                         json.dump(config, f)
                 except Exception as e: messagebox.showerror("Error", f"Error creating configuration file:\n{e}")
         try:
@@ -418,7 +408,7 @@ class AutoClicker:
     def setup_system_tray(self):
         from PIL import Image
         from pystray import Icon, MenuItem, Menu
-        image = image = Image.open(get_resource_path("assets/mouse.ico"))
+        image = image = Image.open(globals.app_icon_path)
         def show_window(icon, item):
             self.root.deiconify()
             icon.stop()
