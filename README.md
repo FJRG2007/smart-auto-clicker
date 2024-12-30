@@ -24,6 +24,7 @@
 - ⏯️ Customize the trigger key to your liking.
 - 💾 All configurations as you left them.
 - 🎮 Player simulation system to avoid being expelled by AFK.
+- ⚡ Easily configure it to start when you turn on your computer (optional of course).
 
 ### How to download and use
 
