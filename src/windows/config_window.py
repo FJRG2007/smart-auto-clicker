@@ -1,5 +1,6 @@
 from tkinter import ttk, messagebox
 from src.memory import MemoryManager
+from src.driver.executions import enable_startup, disable_startup
 import json, time, tkinter as tk, requests, webbrowser, src.lib.globals as globals
 
 class ConfigWindow:
@@ -82,6 +83,33 @@ class ConfigWindow:
         )
         tray_radio.pack(anchor="w")
 
+        # Frame for the "Startup on boot" option.
+        startup_frame = ttk.Frame(self.window)
+        startup_frame.pack(pady=10, fill="x", padx=10)
+
+        # Variable to track the "Exec on startup" state.
+        self.startup_var = tk.BooleanVar(value=self.config.get("exec_on_startup", False))
+
+        # Checkbox for enabling/disabling execution on startup.
+        startup_checkbox = ttk.Checkbutton(
+            startup_frame,
+            text="Run application on system startup",
+            variable=self.startup_var,
+            command=self.on_startup_change
+        )
+        startup_checkbox.pack(anchor="w")
+
+        startup_note = ttk.Label(
+            startup_frame,
+            font=("Arial", 8),
+            anchor="w", 
+            justify="left"
+        )
+        startup_note.pack(anchor="w", pady=(2, 0))
+
+        if globals.local_is_developer_mode: startup_note.config(text="ⓘ This option does not work in development mode.", foreground="red")
+        else: startup_note.config(text="This feature is in beta.", foreground="gray")
+
         self.update_label = ttk.Label(self.window, text="Loading...", foreground="blue")
         self.update_label.pack(pady=5)
 
@@ -103,7 +131,7 @@ class ConfigWindow:
         else:
             self.update_label.config(text="Loading...", foreground="blue")
             self.window.update_idletasks()
-            self.window.after(100, self.fetch_update_data)
+            self.window.after(70, self.fetch_update_data)
 
     def fetch_update_data(self):
         try:
@@ -128,6 +156,10 @@ class ConfigWindow:
             update_button.pack(pady=5, ipadx=10, fill="x", anchor="center", expand=True)
         else: self.update_label.config(text="You are using the latest version.", foreground="green")
 
+    def on_startup_change(self):
+        self.config_changed = True
+        self.config["exec_on_startup"] = self.startup_var.get()
+
     def on_config_change(self):
         self.config_changed = True
 
@@ -135,19 +167,24 @@ class ConfigWindow:
         # Gather the configuration data.
         new_config = {
             "use_current_pos": self.auto_position_var.get(),
-            "startup_mode": self.startup_mode_var.get()
+            "startup_mode": self.startup_mode_var.get(),
+            "exec_on_startup": self.startup_var.get()
         }
         try:
             with open(globals.app_config_file_path, "r") as f:
                 current_config = json.load(f)
             current_config["use_current_pos"] = new_config["use_current_pos"]
             current_config["startup_mode"] = new_config["startup_mode"]
+            current_config["exec_on_startup"] = new_config["exec_on_startup"]
             with open(globals.app_config_file_path, "w") as f:
                 json.dump(current_config, f)
             MemoryManager.set("use_current_pos", new_config["use_current_pos"])
             MemoryManager.set("startup_mode", new_config["startup_mode"])
             MemoryManager.save_memory()
             self.original_config = new_config.copy()
+            # Apply the changes to the system.
+            if new_config["exec_on_startup"]: enable_startup()
+            else: disable_startup()
             self.config_changed = False
         except Exception as e: messagebox.showerror("Error", f"Error saving configuration:\n{e}")
 
