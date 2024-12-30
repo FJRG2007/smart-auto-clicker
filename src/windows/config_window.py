@@ -1,7 +1,7 @@
 from tkinter import ttk, messagebox
 from src.memory import MemoryManager
 from src.utils.basics import get_resource_path
-import json, time, tkinter as tk, requests, webbrowser
+import json, time, tkinter as tk, requests, webbrowser, src.lib.globals as globals
 
 class ConfigWindow:
     CACHE_TIMEOUT = 60
@@ -14,6 +14,9 @@ class ConfigWindow:
         self.window.title("Settings")
         self.window.geometry("300x300")
         self.window.resizable(False, False)
+
+        # Icon.
+        self.window.iconbitmap(globals.app_icon_path)
 
         # Load existing configuration from the config file.
         self.config = self.load_config()

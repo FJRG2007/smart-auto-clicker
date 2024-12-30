@@ -5,8 +5,8 @@ from .windows import WindowsManager
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
 from .utils.basics import get_resource_path
-import os, json, time, mouse, tkinter as tk, keyboard
 from src.clickers.simulating_game import GameSimulator
+import os, json, time, mouse, tkinter as tk, keyboard, src.lib.globals as globals
 
 class AutoClicker:
     def __init__(self):
@@ -31,7 +31,7 @@ class AutoClicker:
         self.windows_manager = WindowsManager(self.root, self.config_file)
 
         # Icon.
-        self.root.iconbitmap(get_resource_path("assets/mouse.ico"))
+        self.root.iconbitmap(globals.app_icon_path)
         
         # Variables.
         self.is_running = False
@@ -61,7 +61,7 @@ class AutoClicker:
         config_dir = os.path.join(base_dir, "FJRG2007_projects_data", "SmartAutoClicker")
         os.makedirs(config_dir, exist_ok=True)
         return config_dir
-        
+
     def setup_gui(self):
         # Report button.
         menu_frame = ttk.Frame(self.root)
