@@ -1,5 +1,5 @@
 import time, keyboard
-from threading import Timer
+from threading import Thread
 
 class GameSimulator:
     def __init__(self, root, button):
@@ -11,25 +11,28 @@ class GameSimulator:
         
     def on_close(self):
         print("Window is closing.")
+        self.simulating_game = False
         self.root.quit()
 
     def toggle_simulation(self):
         if not self.simulating_game:
             self.simulating_game = True
             self.simulate_game_button.config(text="Stop Simulating")
-            self.start_simulation()
+            self.simulation_thread = Thread(target=self.start_simulation)
+            self.simulation_thread.start()
         else:
             self.simulating_game = False
             self.simulate_game_button.config(text="Simulate Playing")
 
     def start_simulation(self):
-        if self.simulating_game:
+        while self.simulating_game:
             self.simulate_keys()
-            Timer(10, self.start_simulation).start()
+            time.sleep(10)
 
     def simulate_keys(self):
         sequence = ["w", "s", "a", "d"]
         for i in range(len(sequence)):
+            if not self.simulating_game: break
             key = sequence[i]
             keyboard.press(key)
             time.sleep(1)
