@@ -1,11 +1,11 @@
 from threading import Thread
 from PIL import Image, ImageTk
 from .memory import MemoryManager
-from .windows import WindowsManager
+from src.windows import WindowsManager
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
 from src.clickers.simulating_game import GameSimulator
-import os, json, time, mouse, tkinter as tk, keyboard, src.lib.globals as globals
+import os, json, time, mouse, random, tkinter as tk, keyboard, src.lib.globals as globals
 
 class AutoClicker:
     def __init__(self):
@@ -284,7 +284,19 @@ class AutoClicker:
             self.is_running = False
             self.status_label.config(text="Status: Stopped")
         self.start_stop_button.config(text="Stop" if self.is_running else "Start")
-            
+
+    def human_delay(self, base: float, variation: float = 0.02):
+        return max(0, base + random.uniform(-variation, variation))
+
+    def move_mouse_naturally(self, x, y):
+        current_x, current_y = mouse.position
+        steps = random.randint(5, 15)
+        for i in range(1, steps + 1):
+            new_x = current_x + (x - current_x) * i / steps
+            new_y = current_y + (y - current_y) * i / steps
+            mouse.position = (int(new_x), int(new_y))
+            time.sleep(self.human_delay(0.005, 0.003))
+
     def clicking_loop(self):
         if self.hold_mode and float(self.hold_entry.get()) == 0:
             if self.click_key in ["left", "right", "middle"]: mouse.press(self.click_key)
@@ -294,26 +306,33 @@ class AutoClicker:
             if self.click_key in ["left", "right", "middle"]: mouse.release(self.click_key)
             else: keyboard.release(self.click_key)
             return
+
         while self.is_running:
-            if not self.use_current_pos: mouse.move(self.click_pos[0], self.click_pos[1])
+            if not self.use_current_pos: self.move_mouse_naturally(*self.click_pos)
+
+            hold_time = float(self.hold_entry.get())
             if self.click_key in ["left", "right", "middle"]:
                 if self.hold_mode:
                     mouse.press(self.click_key)
-                    time.sleep(float(self.hold_entry.get()))
+                    time.sleep(self.human_delay(hold_time))
                     mouse.release(self.click_key)
                 else: mouse.click(self.click_key)
             else:
                 if self.hold_mode:
                     keyboard.press(self.click_key)
-                    time.sleep(float(self.hold_entry.get()))
+                    time.sleep(self.human_delay(hold_time))
                     keyboard.release(self.click_key)
-                else: keyboard.press_and_release(self.click_key)
+                else:
+                    keyboard.press(self.click_key)
+                    keyboard.release(self.click_key)
+
             interval = self.get_interval()
             if interval is None:
                 self.is_running = False
                 self.status_label.config(text="Status: Stopped")
                 return
-            time.sleep(interval)
+
+            time.sleep(self.human_delay(interval, 0.03))  
             
     def save_config(self):
         with open(globals.app_config_file_path, "r") as f:
