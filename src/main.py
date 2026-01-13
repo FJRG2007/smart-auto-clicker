@@ -5,6 +5,7 @@ from src.windows import WindowsManager
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
 from src.clickers.simulating_game import GameSimulator
+from src.clickers.antidetection_bypass import AntiDetectionBypass, BypassProfile
 import os, json, time, mouse, random, tkinter as tk, keyboard, src.lib.globals as globals
 
 class AutoClicker:
@@ -23,7 +24,7 @@ class AutoClicker:
             self.root.deiconify()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.title("Smart Auto Clicker - FJRG2007")
-        self.root.geometry("400x725")
+        self.root.geometry("400x820")
         self.root.resizable(False, False)
         globals.app_config_file_path = os.path.join(globals.app_config_path, "autoclicker_config.json")
         self.windows_manager = WindowsManager(self.root)
@@ -42,6 +43,11 @@ class AutoClicker:
         self.hold_mode = False
         self.hold_duration = 0.1 # Default hold duration in seconds.
         self.trigger_key_text = tk.StringVar(value=f"Current trigger key: {self.trigger_key}")
+
+        # Anti-detection bypass system.
+        self.bypass_enabled = False
+        self.bypass_profile = BypassProfile.MODERATE
+        self.bypass_system = AntiDetectionBypass(self.bypass_profile)
         
         # Default interval values.
         self.hours = 0
@@ -151,7 +157,65 @@ class AutoClicker:
         # Add explanatory note.
         self.hold_note = ttk.Label(self.hold_frame, text="Set to 0 for infinite hold.", font=("Arial", 8), foreground="gray")
         self.hold_note.pack(side=tk.LEFT, padx=5)
-        
+
+        # Anti-Detection Bypass Settings.
+        bypass_frame = ttk.LabelFrame(self.root, text="Anti-Detection Bypass", padding=10)
+        bypass_frame.pack(fill="x", padx=10, pady=5)
+
+        # Enable/Disable bypass.
+        self.bypass_var = tk.BooleanVar(value=False)
+        bypass_toggle_frame = ttk.Frame(bypass_frame)
+        bypass_toggle_frame.pack(fill="x")
+
+        self.bypass_checkbox = ttk.Checkbutton(
+            bypass_toggle_frame,
+            text="Enable Anti-Detection Mode",
+            variable=self.bypass_var,
+            command=self.toggle_bypass
+        )
+        self.bypass_checkbox.pack(side=tk.LEFT)
+
+        # Bypass profile selector.
+        self.bypass_profile_frame = ttk.Frame(bypass_frame)
+
+        ttk.Label(self.bypass_profile_frame, text="Profile:").pack(side=tk.LEFT, padx=5)
+
+        self.profile_var = tk.StringVar(value="moderate")
+        profile_options = [
+            ("Light", "light"),
+            ("Moderate", "moderate"),
+            ("Aggressive", "aggressive"),
+            ("Adaptive", "adaptive")
+        ]
+
+        for text, value in profile_options:
+            ttk.Radiobutton(
+                self.bypass_profile_frame,
+                text=text,
+                variable=self.profile_var,
+                value=value,
+                command=self.change_bypass_profile
+            ).pack(side=tk.LEFT, padx=3)
+
+        # Bypass info label.
+        self.bypass_info_frame = ttk.Frame(bypass_frame)
+        self.bypass_status_label = ttk.Label(
+            self.bypass_info_frame,
+            text="Humanizes click patterns to evade anti-cheat detection",
+            font=("Arial", 8),
+            foreground="gray"
+        )
+        self.bypass_status_label.pack()
+
+        # Stats display (shows during runtime).
+        self.bypass_stats_label = ttk.Label(
+            self.bypass_info_frame,
+            text="",
+            font=("Arial", 8),
+            foreground="blue"
+        )
+        self.bypass_stats_label.pack()
+
         # Button settings.
         button_frame = ttk.LabelFrame(self.root, text="Button Settings", padding=10)
         button_frame.pack(fill="x", padx=10, pady=5)
@@ -200,6 +264,59 @@ class AutoClicker:
         self.hold_mode = self.mode_var.get()
         if self.hold_mode: self.hold_frame.pack()
         else: self.hold_frame.pack_forget()
+
+    def toggle_bypass(self):
+        """Toggle anti-detection bypass mode."""
+        self.bypass_enabled = self.bypass_var.get()
+        if self.bypass_enabled:
+            self.bypass_profile_frame.pack(fill="x", pady=5)
+            self.bypass_info_frame.pack(fill="x")
+            self.bypass_system.reset_session()
+            profile_descriptions = {
+                "light": "Light: Minimal variation, faster but less safe",
+                "moderate": "Moderate: Balanced speed and safety",
+                "aggressive": "Aggressive: Maximum humanization, slower but safest",
+                "adaptive": "Adaptive: Auto-adjusts based on detection risk"
+            }
+            desc = profile_descriptions.get(self.profile_var.get(), "")
+            self.bypass_status_label.config(text=desc)
+        else:
+            self.bypass_profile_frame.pack_forget()
+            self.bypass_info_frame.pack_forget()
+            self.bypass_stats_label.config(text="")
+
+    def change_bypass_profile(self):
+        """Change the bypass profile."""
+        profile_map = {
+            "light": BypassProfile.LIGHT,
+            "moderate": BypassProfile.MODERATE,
+            "aggressive": BypassProfile.AGGRESSIVE,
+            "adaptive": BypassProfile.ADAPTIVE
+        }
+        profile_name = self.profile_var.get()
+        self.bypass_profile = profile_map.get(profile_name, BypassProfile.MODERATE)
+        self.bypass_system = AntiDetectionBypass(self.bypass_profile)
+
+        profile_descriptions = {
+            "light": "Light: Minimal variation, faster but less safe",
+            "moderate": "Moderate: Balanced speed and safety",
+            "aggressive": "Aggressive: Maximum humanization, slower but safest",
+            "adaptive": "Adaptive: Auto-adjusts based on detection risk"
+        }
+        desc = profile_descriptions.get(profile_name, "")
+        self.bypass_status_label.config(text=desc)
+
+    def update_bypass_stats(self):
+        """Update bypass statistics display."""
+        if self.bypass_enabled and self.is_running:
+            stats = self.bypass_system.get_stats()
+            risk_level = "Low" if stats['detection_risk'] < 0.3 else "Medium" if stats['detection_risk'] < 0.6 else "High"
+            stats_text = f"Clicks: {stats['click_count']} | Fatigue: {stats['fatigue_level']:.1%} | Risk: {risk_level}"
+            self.bypass_stats_label.config(text=stats_text)
+            if self.is_running:
+                self.root.after(1000, self.update_bypass_stats)
+        else:
+            self.bypass_stats_label.config(text="")
 
     def get_interval(self):
         try:
@@ -277,27 +394,66 @@ class AutoClicker:
             if interval is None: return
             self.is_running = True
             self.status_label.config(text="Status: Running")
+            # Reset bypass system for new session.
+            if self.bypass_enabled:
+                self.bypass_system.reset_session()
+                self.update_bypass_stats()
             self.click_thread = Thread(target=self.clicking_loop)
             self.click_thread.daemon = True
             self.click_thread.start()
         else:
             self.is_running = False
             self.status_label.config(text="Status: Stopped")
+            self.bypass_stats_label.config(text="")
         self.start_stop_button.config(text="Stop" if self.is_running else "Start")
 
     def human_delay(self, base: float, variation: float = 0.02):
         return max(0, base + random.uniform(-variation, variation))
 
     def move_mouse_naturally(self, x, y):
+        """Move mouse with natural human-like motion."""
         current_x, current_y = mouse.position
-        steps = random.randint(5, 15)
-        for i in range(1, steps + 1):
-            new_x = current_x + (x - current_x) * i / steps
-            new_y = current_y + (y - current_y) * i / steps
-            mouse.position = (int(new_x), int(new_y))
-            time.sleep(self.human_delay(0.005, 0.003))
+
+        if self.bypass_enabled:
+            # Use bypass system for enhanced humanization.
+            params = self.bypass_system.get_mouse_movement_params()
+            steps = params['steps']
+            base_delay = params['delay']
+            curve = params['curve']
+
+            # Apply jitter to target position.
+            x, y = self.bypass_system.get_mouse_jitter(x, y)
+
+            for i in range(1, steps + 1):
+                t = i / steps
+                # Apply movement curve for more natural motion.
+                t_curved = self.bypass_system.apply_movement_curve(t, curve)
+
+                new_x = current_x + (x - current_x) * t_curved
+                new_y = current_y + (y - current_y) * t_curved
+
+                # Add micro-jitter during movement.
+                if random.random() < 0.2:
+                    new_x += random.gauss(0, 1)
+                    new_y += random.gauss(0, 1)
+
+                mouse.position = (int(new_x), int(new_y))
+
+                # Variable delay with gaussian distribution.
+                delay = self.bypass_system.gaussian_variation(base_delay)
+                time.sleep(max(0.001, delay))
+        else:
+            # Original simple movement.
+            steps = random.randint(5, 15)
+            for i in range(1, steps + 1):
+                new_x = current_x + (x - current_x) * i / steps
+                new_y = current_y + (y - current_y) * i / steps
+                mouse.position = (int(new_x), int(new_y))
+                time.sleep(self.human_delay(0.005, 0.003))
 
     def clicking_loop(self):
+        """Main clicking loop with optional anti-detection bypass."""
+        # Handle infinite hold mode.
         if self.hold_mode and float(self.hold_entry.get()) == 0:
             if self.click_key in ["left", "right", "middle"]: mouse.press(self.click_key)
             else: keyboard.press(self.click_key)
@@ -308,31 +464,53 @@ class AutoClicker:
             return
 
         while self.is_running:
-            if not self.use_current_pos: self.move_mouse_naturally(*self.click_pos)
+            # Move mouse if using fixed position.
+            if not self.use_current_pos:
+                self.move_mouse_naturally(*self.click_pos)
 
             hold_time = float(self.hold_entry.get())
+
+            # Determine hold duration.
+            if self.bypass_enabled and self.hold_mode:
+                actual_hold_time = self.bypass_system.get_hold_duration(hold_time)
+            else:
+                actual_hold_time = self.human_delay(hold_time)
+
+            # Execute click or hold.
             if self.click_key in ["left", "right", "middle"]:
                 if self.hold_mode:
                     mouse.press(self.click_key)
-                    time.sleep(self.human_delay(hold_time))
+                    time.sleep(actual_hold_time)
                     mouse.release(self.click_key)
-                else: mouse.click(self.click_key)
+                else:
+                    mouse.click(self.click_key)
             else:
                 if self.hold_mode:
                     keyboard.press(self.click_key)
-                    time.sleep(self.human_delay(hold_time))
+                    time.sleep(actual_hold_time)
                     keyboard.release(self.click_key)
                 else:
                     keyboard.press(self.click_key)
                     keyboard.release(self.click_key)
 
+            # Get base interval.
             interval = self.get_interval()
             if interval is None:
                 self.is_running = False
                 self.status_label.config(text="Status: Stopped")
                 return
 
-            time.sleep(self.human_delay(interval, 0.03))  
+            # Calculate delay with or without bypass.
+            if self.bypass_enabled:
+                # Use advanced humanization.
+                delay = self.bypass_system.get_humanized_delay(interval)
+                # Adapt profile if using adaptive mode.
+                self.bypass_system.adapt_profile()
+            else:
+                # Use simple variation.
+                delay = self.human_delay(interval, 0.03)
+
+            time.sleep(delay)  
             
     def save_config(self):
         with open(globals.app_config_file_path, "r") as f:
@@ -351,7 +529,9 @@ class AutoClicker:
             "hold_mode": self.hold_mode,
             "hold_duration": self.hold_entry.get(),
             "window_x": self.root.winfo_x(),
-            "window_y": self.root.winfo_y()
+            "window_y": self.root.winfo_y(),
+            "bypass_enabled": self.bypass_enabled,
+            "bypass_profile": self.profile_var.get()
         }
         try:
             with open(globals.app_config_file_path, "w") as f:
@@ -376,7 +556,9 @@ class AutoClicker:
             "hold_mode": False,
             "hold_duration": "0.1",
             "window_x": 100,
-            "window_y": 100
+            "window_y": 100,
+            "bypass_enabled": False,
+            "bypass_profile": "moderate"
         }
         if os.path.exists(globals.app_config_file_path):
             try:
@@ -424,6 +606,14 @@ class AutoClicker:
                 
             self.toggle_position()
             self.toggle_mode()
+
+            # Load bypass settings.
+            self.bypass_enabled = config.get("bypass_enabled", False)
+            self.bypass_var.set(self.bypass_enabled)
+            bypass_profile = config.get("bypass_profile", "moderate")
+            self.profile_var.set(bypass_profile)
+            self.change_bypass_profile()
+            self.toggle_bypass()
         except: pass
 
     def setup_system_tray(self):
