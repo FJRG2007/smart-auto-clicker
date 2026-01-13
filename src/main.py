@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
 from src.clickers.simulating_game import GameSimulator
 from src.clickers.antidetection_bypass import AntiDetectionBypass, BypassProfile
+from src.clickers.native_input import NativeInput, InputMethod, get_native_input
 import os, json, time, mouse, random, tkinter as tk, keyboard, src.lib.globals as globals
 
 class AutoClicker:
@@ -24,7 +25,7 @@ class AutoClicker:
             self.root.deiconify()
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.title("Smart Auto Clicker - FJRG2007")
-        self.root.geometry("400x820")
+        self.root.geometry("400x920")
         self.root.resizable(False, False)
         globals.app_config_file_path = os.path.join(globals.app_config_path, "autoclicker_config.json")
         self.windows_manager = WindowsManager(self.root)
@@ -48,6 +49,11 @@ class AutoClicker:
         self.bypass_enabled = False
         self.bypass_profile = BypassProfile.MODERATE
         self.bypass_system = AntiDetectionBypass(self.bypass_profile)
+
+        # Native input system for game compatibility.
+        self.use_native_input = False
+        self.native_input_method = InputMethod.AUTO
+        self.native_input = get_native_input()
         
         # Default interval values.
         self.hours = 0
@@ -216,6 +222,65 @@ class AutoClicker:
         )
         self.bypass_stats_label.pack()
 
+        # Native Input Settings (Game Compatibility).
+        native_frame = ttk.LabelFrame(self.root, text="Game Compatibility Mode", padding=10)
+        native_frame.pack(fill="x", padx=10, pady=5)
+
+        # Enable native input.
+        self.native_var = tk.BooleanVar(value=False)
+        native_toggle_frame = ttk.Frame(native_frame)
+        native_toggle_frame.pack(fill="x")
+
+        self.native_checkbox = ttk.Checkbutton(
+            native_toggle_frame,
+            text="Enable Native Input (for games)",
+            variable=self.native_var,
+            command=self.toggle_native_input
+        )
+        self.native_checkbox.pack(side=tk.LEFT)
+
+        # Input method selector.
+        self.native_method_frame = ttk.Frame(native_frame)
+
+        ttk.Label(self.native_method_frame, text="Method:").pack(side=tk.LEFT, padx=5)
+
+        self.input_method_var = tk.StringVar(value="auto")
+        input_methods = [
+            ("Auto", "auto"),
+            ("SendInput", "sendinput"),
+            ("Legacy", "mouse_event"),
+        ]
+
+        for text, value in input_methods:
+            ttk.Radiobutton(
+                self.native_method_frame,
+                text=text,
+                variable=self.input_method_var,
+                value=value,
+                command=self.change_input_method
+            ).pack(side=tk.LEFT, padx=3)
+
+        # Native input info.
+        self.native_info_frame = ttk.Frame(native_frame)
+
+        # Check if interception is available.
+        interception_status = "Available" if self.native_input.is_interception_available() else "Not installed"
+        self.native_status_label = ttk.Label(
+            self.native_info_frame,
+            text=f"Low-level input for anti-cheat games | Interception: {interception_status}",
+            font=("Arial", 8),
+            foreground="gray"
+        )
+        self.native_status_label.pack()
+
+        self.native_method_label = ttk.Label(
+            self.native_info_frame,
+            text=f"Active: {self.native_input.get_method_name()}",
+            font=("Arial", 8),
+            foreground="green"
+        )
+        self.native_method_label.pack()
+
         # Button settings.
         button_frame = ttk.LabelFrame(self.root, text="Button Settings", padding=10)
         button_frame.pack(fill="x", padx=10, pady=5)
@@ -317,6 +382,31 @@ class AutoClicker:
                 self.root.after(1000, self.update_bypass_stats)
         else:
             self.bypass_stats_label.config(text="")
+
+    def toggle_native_input(self):
+        """Toggle native input mode for game compatibility."""
+        self.use_native_input = self.native_var.get()
+        if self.use_native_input:
+            self.native_method_frame.pack(fill="x", pady=5)
+            self.native_info_frame.pack(fill="x")
+            self.native_method_label.config(text=f"Active: {self.native_input.get_method_name()}")
+        else:
+            self.native_method_frame.pack_forget()
+            self.native_info_frame.pack_forget()
+
+    def change_input_method(self):
+        """Change the native input method."""
+        method_map = {
+            "auto": InputMethod.AUTO,
+            "sendinput": InputMethod.SENDINPUT,
+            "mouse_event": InputMethod.MOUSE_EVENT,
+        }
+        method_name = self.input_method_var.get()
+        method = method_map.get(method_name, InputMethod.AUTO)
+
+        # Recreate native input with new method.
+        self.native_input = NativeInput(method)
+        self.native_method_label.config(text=f"Active: {self.native_input.get_method_name()}")
 
     def get_interval(self):
         try:
@@ -452,15 +542,31 @@ class AutoClicker:
                 time.sleep(self.human_delay(0.005, 0.003))
 
     def clicking_loop(self):
-        """Main clicking loop with optional anti-detection bypass."""
+        """Main clicking loop with optional anti-detection bypass and native input."""
         # Handle infinite hold mode.
         if self.hold_mode and float(self.hold_entry.get()) == 0:
-            if self.click_key in ["left", "right", "middle"]: mouse.press(self.click_key)
-            else: keyboard.press(self.click_key)
+            if self.click_key in ["left", "right", "middle"]:
+                if self.use_native_input:
+                    self.native_input.mouse_down(self.click_key)
+                else:
+                    mouse.press(self.click_key)
+            else:
+                if self.use_native_input:
+                    self.native_input.key_down(self.click_key)
+                else:
+                    keyboard.press(self.click_key)
             while self.is_running:
                 time.sleep(0.1)
-            if self.click_key in ["left", "right", "middle"]: mouse.release(self.click_key)
-            else: keyboard.release(self.click_key)
+            if self.click_key in ["left", "right", "middle"]:
+                if self.use_native_input:
+                    self.native_input.mouse_up(self.click_key)
+                else:
+                    mouse.release(self.click_key)
+            else:
+                if self.use_native_input:
+                    self.native_input.key_up(self.click_key)
+                else:
+                    keyboard.release(self.click_key)
             return
 
         while self.is_running:
@@ -476,22 +582,38 @@ class AutoClicker:
             else:
                 actual_hold_time = self.human_delay(hold_time)
 
-            # Execute click or hold.
+            # Execute click or hold using native input or standard library.
             if self.click_key in ["left", "right", "middle"]:
                 if self.hold_mode:
-                    mouse.press(self.click_key)
-                    time.sleep(actual_hold_time)
-                    mouse.release(self.click_key)
+                    if self.use_native_input:
+                        self.native_input.mouse_down(self.click_key)
+                        time.sleep(actual_hold_time)
+                        self.native_input.mouse_up(self.click_key)
+                    else:
+                        mouse.press(self.click_key)
+                        time.sleep(actual_hold_time)
+                        mouse.release(self.click_key)
                 else:
-                    mouse.click(self.click_key)
+                    if self.use_native_input:
+                        self.native_input.click(self.click_key)
+                    else:
+                        mouse.click(self.click_key)
             else:
                 if self.hold_mode:
-                    keyboard.press(self.click_key)
-                    time.sleep(actual_hold_time)
-                    keyboard.release(self.click_key)
+                    if self.use_native_input:
+                        self.native_input.key_down(self.click_key)
+                        time.sleep(actual_hold_time)
+                        self.native_input.key_up(self.click_key)
+                    else:
+                        keyboard.press(self.click_key)
+                        time.sleep(actual_hold_time)
+                        keyboard.release(self.click_key)
                 else:
-                    keyboard.press(self.click_key)
-                    keyboard.release(self.click_key)
+                    if self.use_native_input:
+                        self.native_input.key_press(self.click_key)
+                    else:
+                        keyboard.press(self.click_key)
+                        keyboard.release(self.click_key)
 
             # Get base interval.
             interval = self.get_interval()
@@ -531,7 +653,9 @@ class AutoClicker:
             "window_x": self.root.winfo_x(),
             "window_y": self.root.winfo_y(),
             "bypass_enabled": self.bypass_enabled,
-            "bypass_profile": self.profile_var.get()
+            "bypass_profile": self.profile_var.get(),
+            "native_input_enabled": self.use_native_input,
+            "native_input_method": self.input_method_var.get()
         }
         try:
             with open(globals.app_config_file_path, "w") as f:
@@ -558,7 +682,9 @@ class AutoClicker:
             "window_x": 100,
             "window_y": 100,
             "bypass_enabled": False,
-            "bypass_profile": "moderate"
+            "bypass_profile": "moderate",
+            "native_input_enabled": False,
+            "native_input_method": "auto"
         }
         if os.path.exists(globals.app_config_file_path):
             try:
@@ -614,6 +740,14 @@ class AutoClicker:
             self.profile_var.set(bypass_profile)
             self.change_bypass_profile()
             self.toggle_bypass()
+
+            # Load native input settings.
+            self.use_native_input = config.get("native_input_enabled", False)
+            self.native_var.set(self.use_native_input)
+            native_method = config.get("native_input_method", "auto")
+            self.input_method_var.set(native_method)
+            self.change_input_method()
+            self.toggle_native_input()
         except: pass
 
     def setup_system_tray(self):
@@ -640,6 +774,7 @@ class AutoClicker:
     def on_closing(self):
         self.is_running = False
         keyboard.unhook_all()
+        self.native_input.cleanup()
         self.save_config()
         self.root.destroy()
 
