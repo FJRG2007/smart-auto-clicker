@@ -1,6 +1,6 @@
 from threading import Thread
 from PIL import Image, ImageTk
-from .memory import MemoryManager
+from src.memory import MemoryManager
 from src.windows import WindowsManager
 from tkinter import ttk, messagebox
 from keyboard import hook, unhook_all
