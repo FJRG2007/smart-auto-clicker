@@ -3,10 +3,10 @@
 
 a = Analysis(
     ['init.py'],
-    pathex=[],
+    pathex=['.'],
     binaries=[],
     datas=[('assets', 'assets')],
-    hiddenimports=[],
+    hiddenimports=['src', 'src.main', 'src.memory', 'src.memory.manager', 'src.windows', 'src.windows.main_window', 'src.windows.config_window', 'src.clickers', 'src.clickers.simulating_game', 'src.clickers.antidetection_bypass', 'src.clickers.native_input', 'src.utils', 'src.utils.basics', 'src.lib.globals', 'src.driver', 'src.driver.components', 'src.driver.components.switch', 'src.driver.executions', 'src.driver.executions.startup'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
