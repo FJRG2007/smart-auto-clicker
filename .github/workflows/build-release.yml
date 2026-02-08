@@ -25,12 +25,24 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
           pip install pyinstaller
-          pip install keyboard mouse pillow requests pystray
 
       - name: Build executable
         run: |
-          pyinstaller AutoClicker.spec
+          pyinstaller --name AutoClicker \
+            --onefile \
+            --windowed \
+            --paths . \
+            --add-data "assets:assets" \
+            --hidden-import src --hidden-import src.main --hidden-import src.memory --hidden-import src.memory.manager \
+            --hidden-import src.windows --hidden-import src.windows.main_window --hidden-import src.windows.config_window \
+            --hidden-import src.clickers --hidden-import src.clickers.simulating_game --hidden-import src.clickers.antidetection_bypass \
+            --hidden-import src.clickers.native_input --hidden-import src.utils --hidden-import src.utils.basics \
+            --hidden-import src.lib.globals --hidden-import src.driver --hidden-import src.driver.components \
+            --hidden-import src.driver.components.switch --hidden-import src.driver.executions --hidden-import src.driver.executions.startup \
+            --icon assets/mouse.ico \
+            init.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -64,8 +76,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
           pip install pyinstaller
-          pip install keyboard mouse pillow requests pystray
 
       - name: Build executable
         run: |
@@ -118,8 +130,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
           pip install pyinstaller
-          pip install keyboard mouse pillow requests pystray
 
       - name: Build executable
         run: |
